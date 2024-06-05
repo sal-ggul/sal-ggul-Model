@@ -45,7 +45,6 @@ def cal_Y_KRW():
 
 
 def predict_Result(model, scaled_data, scaler, df):
-
     # 데이터의 마지막 365일을 사용하여 향후 3개월을 예측
     last_365_days = scaled_data[-365:]
     x_input = last_365_days.reshape(1, -1)
@@ -72,13 +71,20 @@ def predict_Result(model, scaled_data, scaler, df):
     start_date = df.index[-1] + pd.Timedelta(days=1)
 
     # 예측된 가격을 날짜와 함께 DataFrame으로 변환
+
+    curr_KRW = get_curr_KRW()
+    predictions_KRW = (predictions * curr_KRW) / 10000
+
     predicted_df = pd.DataFrame(predictions, columns=['Predicted Close Price'],
                                 index=pd.date_range(start=start_date, periods=len(predictions)))
+
+    predicted_df_KRW = pd.DataFrame(predictions_KRW, columns=['Predicted Close Price'],
+                                    index=pd.date_range(start=start_date, periods=len(predictions)))
 
     # 실제 데이터와 예측 데이터 합치기
     combined_df = pd.concat([df[['Close']], predicted_df])
 
-    return combined_df
+    return combined_df, predicted_df_KRW
 
 
 def init_dataset():
@@ -120,7 +126,9 @@ def create_dataset(data, time_step=1):
 
 def start_ETH():
     model, scaled_data, scaler, df = init_dataset()
-    result = predict_Result(model, scaled_data, scaler, df)
+    result, predicted_KRW = predict_Result(model, scaled_data, scaler, df)
+
+    print(predicted_KRW[:10])
     show_XY(result)
     cal_Y_KRW()
 
